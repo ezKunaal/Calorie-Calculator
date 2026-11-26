@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f4f7f2" />
+  <title>Calorie Calculator</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <!-- Header -->
+    <header class="top">
+      <button class="icon-btn" id="prevDay" aria-label="Previous day">‹</button>
+      <div class="day">
+        <div class="day-label" id="dayLabel">Today</div>
+        <div class="day-sub" id="daySub"></div>
+      </div>
+      <button class="icon-btn" id="nextDay" aria-label="Next day">›</button>
+      <button class="icon-btn gear" id="openSettings" aria-label="Daily goals">⚙︎</button>
+    </header>
+
+    <!-- Summary card -->
+    <section class="card summary">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+          <circle class="ring-bg" cx="100" cy="100" r="86" />
+          <circle class="ring-fg" id="calRing" cx="100" cy="100" r="86" />
+        </svg>
+        <div class="ring-center">
+          <div class="ring-big" id="calLeft">2000</div>
+          <div class="ring-small" id="calLeftLabel">kcal left</div>
+          <div class="ring-tiny" id="calEaten">0 / 2000 eaten</div>
+        </div>
+      </div>
+
+      <div class="macros">
+        <div class="macro">
+          <div class="macro-head"><span>💪 Protein</span><span id="proteinText">0 / 100 g</span></div>
+          <div class="bar"><div class="bar-fill protein" id="proteinBar"></div></div>
+        </div>
+        <div class="macro">
+          <div class="macro-head"><span>🌾 Fiber</span><span id="fiberText">0 / 30 g</span></div>
+          <div class="bar"><div class="bar-fill fiber" id="fiberBar"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section class="actions">
+      <button class="btn primary big" id="snapBtn">📷 Snap your food</button>
+      <div class="row">
+        <button class="btn soft" id="uploadBtn">🖼️ Upload photo</button>
+        <button class="btn soft" id="searchBtn">🔍 Add manually</button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" hidden />
+      <input type="file" id="uploadInput" accept="image/*" hidden />
+    </section>
+
+    <!-- Log -->
+    <section class="card log">
+      <div class="log-head">
+        <h2>Meals</h2>
+        <span class="muted" id="logCount"></span>
+      </div>
+      <ul id="logList" class="log-list"></ul>
+      <div id="emptyLog" class="empty">
+        <div class="empty-emoji">🍽️</div>
+        <p>Nothing logged yet.<br />Snap a photo of your meal to get started.</p>
+      </div>
+    </section>
+
+    <p class="footnote">Food recognition runs on your device, so your photos never leave your phone. Nutrition values are estimates.</p>
+  </main>
+
+  <!-- Camera sheet -->
+  <div class="sheet-backdrop" id="cameraSheet" hidden>
+    <div class="sheet camera-sheet">
+      <div class="video-wrap">
+        <video id="video" autoplay playsinline muted></video>
+      </div>
+      <div class="camera-controls">
+        <button class="btn soft" id="cameraCancel">Cancel</button>
+        <button class="shutter" id="shutter" aria-label="Take photo"></button>
+        <button class="btn soft" id="cameraFlip">↺ Flip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result / add sheet -->
+  <div class="sheet-backdrop" id="addSheet" hidden>
+    <div class="sheet">
+      <button class="close" id="addClose" aria-label="Close">✕</button>
+      <img id="preview" class="preview" alt="Your food" hidden />
+
+      <div id="analyzing" class="analyzing" hidden>
+        <div class="spinner"></div>
+        <div>
+          <div id="analyzingText">Analyzing your food…</div>
+          <div class="progress" id="progressWrap" hidden><div class="progress-fill" id="progressFill"></div></div>
+          <div class="muted small" id="progressNote"></div>
+        </div>
+      </div>
+
+      <div id="suggestBlock" hidden>
+        <div class="label">Is it one of these?</div>
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <div class="label">Search foods</div>
+      <input type="search" id="foodSearch" class="input" placeholder="e.g. pizza, oatmeal, salmon…" autocomplete="off" />
+      <ul class="search-results" id="searchResults"></ul>
+
+      <div id="chosen" class="chosen" hidden>
+        <div class="chosen-title">
+          <span class="chosen-emoji" id="chosenEmoji"></span>
+          <div>
+            <div class="chosen-name" id="chosenName"></div>
+            <div class="muted small" id="chosenServing"></div>
+          </div>
+        </div>
+
+        <div class="label">Portion</div>
+        <div class="portions" id="portions">
+          <button data-p="0.5">½</button>
+          <button data-p="1" class="active">1×</button>
+          <button data-p="1.5">1½</button>
+          <button data-p="2">2×</button>
+          <button data-p="3">3×</button>
+        </div>
+
+        <div class="nutri">
+          <div><b id="nCal">0</b><span>kcal</span></div>
+          <div><b id="nPro">0</b><span>protein g</span></div>
+          <div><b id="nFib">0</b><span>fiber g</span></div>
+        </div>
+        <button class="btn primary big" id="addConfirm">Add to day</button>
+      </div>
+
+      <details class="custom">
+        <summary>Can't find it? Enter values yourself</summary>
+        <div class="custom-grid">
+          <input class="input" id="cName" placeholder="Food name" />
+          <input class="input" id="cCal" type="number" inputmode="decimal" placeholder="kcal" />
+          <input class="input" id="cPro" type="number" inputmode="decimal" placeholder="Protein g" />
+          <input class="input" id="cFib" type="number" inputmode="decimal" placeholder="Fiber g" />
+        </div>
+        <button class="btn soft full" id="customAdd">Add custom food</button>
+      </details>
+    </div>
+  </div>
+
+  <!-- Settings sheet -->
+  <div class="sheet-backdrop" id="settingsSheet" hidden>
+    <div class="sheet">
+      <button class="close" id="settingsClose" aria-label="Close">✕</button>
+      <h2>Daily goals</h2>
+      <label class="field">
+        <span>🔥 Calories (kcal)</span>
+        <input class="input" type="number" id="goalCal" min="500" max="10000" step="50" inputmode="numeric" />
+      </label>
+      <label class="field">
+        <span>💪 Protein (g)</span>
+        <input class="input" type="number" id="goalPro" min="0" max="500" step="5" inputmode="numeric" />
+      </label>
+      <label class="field">
+        <span>🌾 Fiber (g)</span>
+        <input class="input" type="number" id="goalFib" min="0" max="150" step="1" inputmode="numeric" />
+      </label>
+      <button class="btn primary big" id="saveGoals">Save goals</button>
+      <button class="btn danger full" id="clearDay">Clear this day's meals</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
